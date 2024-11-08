@@ -1,0 +1,8 @@
+streamlit
+pymysql
+scikit-learn
+numpy
+intel-openmp
+idna
+pillow
+pandas
