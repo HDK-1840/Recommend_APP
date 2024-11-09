@@ -74,7 +74,7 @@ if 'feedback_submitted' not in st.session_state:
 st.markdown("<h1 style='text-align: center; font-weight: bold; font-size: 24px; color: #3498db;'>"
             "新能源汽车推荐系统体验"
             "</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; font-size: 16px; white-space: nowrap;'>"
+st.markdown("<h3 style='text-align: center; font-size: 16px; '>"
             "本团队开发了一款新能源汽车推荐系统，欢迎有购车需求的朋友前来体验，并提供宝贵的评价和建议！"
             "</h3>", unsafe_allow_html=True)
 st.markdown("此推荐系统旨在通过问卷的方式主动获取消费者对新能源汽车的需求特征，根据需求特征为消费者推荐尽可能满足其需求的车型。")
