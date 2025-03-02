@@ -6,3 +6,4 @@ intel-openmp
 idna
 pillow
 pandas
+plotly
