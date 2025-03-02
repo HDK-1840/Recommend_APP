@@ -5,6 +5,7 @@ import numpy as np
 from io import BytesIO
 from PIL import Image
 import pandas as pd
+import plotly.graph_objects as go
 
 
 # 数据库连接函数
@@ -24,7 +25,7 @@ def create_results_table_if_not_exists():
     connection = get_db_connection()
     cursor = connection.cursor()
     create_table_query = """
-    CREATE TABLE IF NOT EXISTS results (
+    CREATE TABLE IF NOT EXISTS results_1 (
         id INT AUTO_INCREMENT PRIMARY KEY,
         gender VARCHAR(10),
         age INT,
@@ -72,25 +73,27 @@ if 'feedback_submitted' not in st.session_state:
 
 # 设置标题和问卷内容
 st.markdown("<h1 style='text-align: center; font-weight: bold; font-size: 24px; color: #3498db;'>"
-            "新能源汽车推荐系统体验"
+            "新能源汽车推荐系统试用"
             "</h1>", unsafe_allow_html=True)
-st.markdown("###### 本团队开发了一款新能源汽车推荐系统，欢迎有购车需求的朋友前来体验，并提供宝贵的评价和建议！")
-st.markdown("此推荐系统旨在通过问卷的方式主动获取消费者对新能源汽车的需求特征，根据需求特征为消费者推荐尽可能满足其需求的车型。")
+st.markdown("<h3 style='text-align: center; font-size: 16px; white-space: nowrap;'>"
+            "您好，欢迎参与此推荐系统试用!"
+            "</h3>", unsafe_allow_html=True)
+st.markdown(
+    "此推荐系统旨在通过问卷的方式主动获取消费者对新能源汽车的需求特征，根据需求特征为消费者推荐尽可能满足其需求的车型。")
+st.markdown("""
+##### 请按照以下步骤完成您的用车需求提交及反馈：
 
-# **使用说明部分**
-with st.expander("使用说明", expanded=True):
-    st.markdown("""
-    ##### 请按照以下步骤完成您的用车需求提交及反馈：
-    
-    1. **填写下方的用车需求表单**。
-    2. 填写完成后，点击 **“提交您的用车需求”** 按钮。
-    3. **稍等几秒钟**，下滑页面查看系统推荐的结果。
-    4. 根据您的使用体验，**填写推荐结果下方的体验评价问卷**。
-    5. 点击 **“提交反馈”** 完成整个流程。
-    """)
+1. **填写下方的用车需求表单**。
+2. 填写完成后，点击 **“提交您的用车需求”** 按钮。
+3. **稍等几秒钟**，下滑页面查看系统推荐的结果。
+4. 根据您的使用体验，**填写推荐结果下方的体验评价问卷**。
+5. 点击 **“提交反馈”** 完成整个流程。
+
+这样，您就能顺利完成用车需求提交和体验反馈！
+""")
 
 # **需求获取部分**
-with st.expander("需求获取", expanded=True):
+with (st.expander("需求获取", expanded=True)):
     st.markdown("###### 请回答以下问题，描述您对车型要求的基本信息")
 
     # 您的性别 (选择题)
@@ -260,14 +263,40 @@ with st.expander("需求获取", expanded=True):
 
         filtered_df = previous_df
 
-        model_vectors = filtered_df[["Space_sentiment", "Battery_life_sentiment", "Exterior_sentiment",
-                                     "Interior_sentiment", "Driving_experience_sentiment",
-                                     "Intelligence_sentiment", "Cost_performance_sentiment"]].to_numpy()
-        similarities = cosine_similarity([demand_vector], model_vectors)[0]
-        filtered_df["similarity"] = similarities
+        model_vectors = filtered_df[[
+            "Space_sentiment", "Battery_life_sentiment", "Exterior_sentiment",
+            "Interior_sentiment", "Driving_experience_sentiment",
+            "Intelligence_sentiment", "Cost_performance_sentiment"
+        ]].to_numpy()
 
-        # 存储推荐结果到session_state
-        st.session_state.recommendations = filtered_df.nlargest(10, "similarity").to_dict("records")
+        # 计算综合评分
+        # 1. 余弦相似度计算
+        similarities = cosine_similarity([demand_vector], model_vectors)[0]
+        filtered_df["similarity"] = similarities  # 确保创建 similarity 列
+
+        # 2. 计算整体评分
+        filtered_df['overall_score'] = filtered_df[[
+            "Space_sentiment", "Battery_life_sentiment", "Exterior_sentiment",
+            "Interior_sentiment", "Driving_experience_sentiment",
+            "Intelligence_sentiment", "Cost_performance_sentiment"
+        ]].mean(axis=1)
+
+        # 3. 归一化处理
+        filtered_df['similarity_norm'] = (filtered_df['similarity'] - filtered_df['similarity'].min()) / (
+                filtered_df['similarity'].max() - filtered_df['similarity'].min())
+        filtered_df['overall_norm'] = (filtered_df['overall_score'] - filtered_df['overall_score'].min()) / (
+                filtered_df['overall_score'].max() - filtered_df['overall_score'].min())
+
+        # 4. 计算加权综合得分
+        SIMILARITY_WEIGHT = 0.5
+        OVERALL_WEIGHT = 0.5
+        filtered_df['composite_score'] = (
+                filtered_df['similarity_norm'] * SIMILARITY_WEIGHT +
+                filtered_df['overall_norm'] * OVERALL_WEIGHT
+        )
+
+        # 存储推荐结果
+        st.session_state.recommendations = filtered_df.nlargest(10, 'composite_score').to_dict("records")
         st.session_state.submitted = True
 
 # 结果和反馈问卷展示
@@ -285,13 +314,67 @@ if st.session_state.submitted:
             st.write(f"**参考价格**: {row['corresponding_guide_price']}")
             st.write(f"**续航里程**: {row['ODO']}")
             st.write(f"**充电时间**: {row['charging_time']}")
-            st.write(f"**空间表现口碑情感值**: {row['Space_sentiment']:.3f}")
-            st.write(f"**电池续航表现口碑情感值**: {row['Battery_life_sentiment']:.3f}")
-            st.write(f"**外观设计口碑情感值**: {row['Exterior_sentiment']:.3f}")
-            st.write(f"**内饰设计口碑情感值**: {row['Interior_sentiment']:.3f}")
-            st.write(f"**驾驶质感口碑情感值**: {row['Driving_experience_sentiment']:.3f}")
-            st.write(f"**智能系统口碑情感值**: {row['Intelligence_sentiment']:.3f}")
-            st.write(f"**性价比口碑情感值**: {row['Cost_performance_sentiment']:.3f}")
+
+            # 构建雷达图
+            categories = ['空间表现得分', '电池续航得分', '外观设计得分', '内饰设计得分',
+                          '驾驶质感得分', '车载智能系统得分', '性价比得分']
+            values = [
+                row['Space_sentiment'] * 100,
+                row['Battery_life_sentiment'] * 100,
+                row['Exterior_sentiment'] * 100,
+                row['Interior_sentiment'] * 100,
+                row['Driving_experience_sentiment'] * 100,
+                row['Intelligence_sentiment'] * 100,
+                row['Cost_performance_sentiment'] * 100
+            ]
+
+            # 生成组合后的标签（类别名称+对应数值）
+            formatted_categories = [
+                f"{cat}<br>{val:.1f}"
+                for cat, val in zip(categories, values)
+            ]
+
+            # 构建雷达图
+            fig = go.Figure()
+            fig.add_trace(go.Scatterpolar(
+                r=values + values[:1],  # 使图形闭合
+                theta=formatted_categories + formatted_categories[:1],  # 使用带数值的新标签
+                fill='toself',
+                name='特征雷达图',
+                line=dict(color='rgb(52, 152, 219)'),
+                hoverinfo='none'
+            ))
+
+            # 调整标签显示设置
+            fig.update_layout(
+                polar=dict(
+                    radialaxis=dict(
+                        visible=True,
+                        range=[0, 100],
+                        tickfont=dict(size=8)
+                    ),
+                    angularaxis=dict(
+                        tickfont=dict(size=10),  # 调整标签字体大小
+                        rotation=30  # 略微旋转标签避免重叠
+                    )
+                ),
+                showlegend=False,
+                title={
+                    'text': "车型口碑得分雷达图",
+                    'y': 0.94,
+                    'x': 0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'top'
+                },
+                template="plotly_white",
+                margin=dict(l=50, r=50, t=80, b=50),  # 适当增加边距
+                height=350,
+                width=500
+            )
+
+            # 在 Streamlit 中显示
+            st.plotly_chart(fig, use_container_width=True)
+
             image_data = row["pictures"]
             image = Image.open(BytesIO(image_data))
             st.image(image,
@@ -342,7 +425,7 @@ if st.session_state.submitted:
                 with get_db_connection() as connection:
                     cursor = connection.cursor()
                     insert_query = """
-                        INSERT INTO results (gender, age, region, vehicle_types, power_types, budget_min, budget_max, 
+                        INSERT INTO results_1 (gender, age, region, vehicle_types, power_types, budget_min, budget_max, 
                                              odo_range, charge_time, space_score, battery_score, exterior_score, 
                                              interior_score, driving_score, intelligence_score, cost_performance_score, 
                                              q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13)
