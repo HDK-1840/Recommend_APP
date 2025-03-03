@@ -73,13 +73,13 @@ if 'feedback_submitted' not in st.session_state:
 
 # 设置标题和问卷内容
 st.markdown("<h1 style='text-align: center; font-weight: bold; font-size: 24px; color: #3498db;'>"
-            "新能源汽车推荐系统试用"
+            "新能源乘用车推荐系统试用"
             "</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; font-size: 16px; white-space: nowrap;'>"
             "您好，欢迎参与此推荐系统试用!"
             "</h3>", unsafe_allow_html=True)
 st.markdown(
-    "此推荐系统旨在通过问卷的方式主动获取消费者对新能源汽车的需求特征，根据需求特征为消费者推荐尽可能满足其需求的车型。")
+    "此推荐系统旨在通过问卷的方式主动获取消费者对新能源乘用车的需求特征，根据需求特征为消费者推荐尽可能满足其需求的车型。")
 st.markdown("""
 ##### 请按照以下步骤完成您的用车需求提交及反馈：
 
@@ -128,23 +128,19 @@ with (st.expander("需求获取", expanded=True)):
         "中型MPV": "6-7座，商务或家庭代步",
         "紧凑型MPV": "5-7座，家庭或个人代步",
         "跑车": "2座，运动驾驶",
-        "微面": "5-7座，短途物流、小型运输",
-        "微卡": "2-3座，小型货物运输",
-        "轻客": "9-15座，载客或小型物流",
-        "皮卡": "2-5座，货物运输及多用途"
     }
 
     vehicle_options = [f"{vehicle_type} ({description})" for vehicle_type, description in vehicle_types.items()]
     selected_vehicle_types = st.multiselect("您偏好的车型级别(可多选)", vehicle_options)
 
-    # 您对新能源汽车的动力类型更倾向于 (多选题)
+    # 您对新能源乘用车的动力类型更倾向于 (多选题)
     power_types = {
         "纯电动": "仅用电池驱动",
         "增程式": "电驱为主，内燃机发电增程",
         "插电式混合动力": "短途电驱长途油驱"
     }
     power_options = [f"{power_type} ({description})" for power_type, description in power_types.items()]
-    selected_power_types = st.multiselect("您对新能源汽车的动力类型更倾向于(可多选)", power_options)
+    selected_power_types = st.multiselect("您对新能源乘用车的动力类型更倾向于(可多选)", power_options)
 
     # 您的购车预算范围 (数值范围选择题)
     st.session_state['budget_min'], st.session_state['budget_max'] = st.slider(
@@ -153,8 +149,8 @@ with (st.expander("需求获取", expanded=True)):
     budget_min = st.session_state['budget_min']
     budget_max = st.session_state['budget_max']
 
-    # 您期望的新能源汽车续航里程 (数值范围选择题)
-    ODO_range = st.number_input("您可接受的新能源汽车续航里程最低为 (单位：公里)(请输入40到1000之间的数字)",
+    # 您期望的新能源乘用车续航里程 (数值范围选择题)
+    ODO_range = st.number_input("您可接受的新能源乘用车续航里程最低为 (单位：公里)(请输入40到1000之间的数字)",
                                 min_value=40, max_value=1000, value=40, step=10)
 
     # 您可接受的充满电的时间 (单个数字选择题)
@@ -387,7 +383,7 @@ if st.session_state.submitted:
 
         with st.form("feedback_form"):
             tam_questions = {
-                "我觉得这个推荐系统能够提高我选择合适新能源汽车的效率。": 10,
+                "我觉得这个推荐系统能够提高我选择合适新能源乘用车的效率。": 10,
                 "使用这个推荐系统可以让我的购车决策更明智。": 10,
                 "这个推荐系统对我来说是一个有价值的工具。": 10,
                 "推荐系统帮助我节省了时间，使我更快速地找到心仪的车型。": 10,
@@ -397,8 +393,8 @@ if st.session_state.submitted:
                 "我认为在推荐系统中查看推荐结果非常简单。": 10,
                 "我觉得操作这个推荐系统不需要耗费太多精力。": 10,
                 "总体来说，我觉得推荐系统的操作是轻松愉快的。": 10,
-                "我很可能会将这个新能源汽车推荐系统推荐给朋友或家人。": 10,
-                "相较于之前我使用过的汽车推荐系统，我更愿意使用本次试用的系统。": 10,
+                "我很可能会将这个新能源乘用车推荐系统推荐给朋友或家人。": 10,
+                "相较于之前我使用过的乘用车推荐系统，我更愿意使用本次试用的系统。": 10,
                 "在我得到的10个推荐车型中，我对其中的几个车型感兴趣？": 10
             }
 
@@ -437,7 +433,7 @@ if st.session_state.submitted:
                         budget_min, budget_max, ODO_range, charge_time, importance_values["空间表现"],
                         importance_values["电池续航表现"], importance_values["外观设计"], importance_values["内饰设计"],
                         importance_values["驾驶质感"], importance_values["智能系统"], importance_values["性价比"],
-                        responses["我觉得这个推荐系统能够提高我选择合适新能源汽车的效率。"],
+                        responses["我觉得这个推荐系统能够提高我选择合适新能源乘用车的效率。"],
                         responses["使用这个推荐系统可以让我的购车决策更明智。"],
                         responses["这个推荐系统对我来说是一个有价值的工具。"],
                         responses["推荐系统帮助我节省了时间，使我更快速地找到心仪的车型。"],
@@ -447,8 +443,8 @@ if st.session_state.submitted:
                         responses["我认为在推荐系统中查看推荐结果非常简单。"],
                         responses["我觉得操作这个推荐系统不需要耗费太多精力。"],
                         responses["总体来说，我觉得推荐系统的操作是轻松愉快的。"],
-                        responses["我很可能会将这个新能源汽车推荐系统推荐给朋友或家人。"],
-                        responses["相较于之前我使用过的汽车推荐系统，我更愿意使用本次试用的系统。"],
+                        responses["我很可能会将这个新能源乘用车推荐系统推荐给朋友或家人。"],
+                        responses["相较于之前我使用过的乘用车推荐系统，我更愿意使用本次试用的系统。"],
                         responses["在我得到的10个推荐车型中，我对其中的几个车型感兴趣？"]
                     ))
                     connection.commit()
